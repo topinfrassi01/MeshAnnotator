@@ -1,6 +1,3 @@
-/*
-    vtkInteractorStyleTrackballVertexGlyphActor.h
-*/
 #pragma once
 
 #include <vtkSmartPointer.h>
@@ -28,6 +25,7 @@ public:
         this->trackedPoints = vtkSmartPointer<vtkPoints>::New();
         this->pointPicker = vtkSmartPointer<vtkPointPicker>::New();
         this->pointPicker->SetTolerance(0.01);
+        this->pointPicker->SetPickFromList(true);
 
         vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
         points->InsertNextPoint(0, 0, 0);
@@ -50,6 +48,7 @@ public:
 
     inline void SetObservedActor(vtkSmartPointer<vtkActor> actor) {
         this->observedActor = actor;
+        this->pointPicker->AddPickList(actor);
     }
 
     void OnMouseMove() override
@@ -100,6 +99,7 @@ public:
 private:
     vtkSmartPointer<vtkPoints> trackedPoints;
     vtkSmartPointer<vtkActor> observedActor;
+
     vtkSmartPointer<vtkPointPicker> pointPicker;
     vtkSmartPointer<vtkPolyDataMapper> glyphMapper;
     vtkSmartPointer<vtkActor> glyphActor;

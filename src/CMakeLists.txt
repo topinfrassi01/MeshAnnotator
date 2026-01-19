@@ -11,7 +11,7 @@ find_package(VTK COMPONENTS
   REQUIRED)
 
 # Main executable
-add_executable(MeshAnnotator main.cpp InteractorStyleCellTrackerWrapper.h InteractorStylePointTrackerWrapper.h LandmarksPickingCallback.h CellsPickingCallback.h)
+add_executable(MeshAnnotator main.cpp InteractorStyleCellTrackerWrapper.h InteractorStylePointTrackerWrapper.h)
 
 target_link_libraries(MeshAnnotator PRIVATE ${VTK_LIBRARIES})
 

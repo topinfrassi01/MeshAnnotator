@@ -1,0 +1,22 @@
+# Build outputs
+/out
+
+# VS Code settings
+.vscode/
+
+# Visual Studio
+*.sdf
+*.suo
+*.VC.db
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Others
+*.user
+*.log
+vcpkg_installed/
+vcpkg

@@ -10,18 +10,30 @@
 #include <vtkActor.h>
 
 template <class T>
-class InteractorStylePointTrackerWrapper : public T
+class InteractorStylePointPicker : public T
 {
 public:
-    static InteractorStylePointTrackerWrapper<T>* New()
+    static InteractorStylePointPicker<T>* New()
     {
-        return new InteractorStylePointTrackerWrapper();
+        return new InteractorStylePointPicker();
     }
 
-    vtkTypeMacro(InteractorStylePointTrackerWrapper<T>, T);
-
-    InteractorStylePointTrackerWrapper<T>()
+    void DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points)
     {
+        auto newPoints = vtkSmartPointer<vtkPoints>::New();
+        for(vtkIdType i = 0; i < points->GetNumberOfPoints(); i++)
+            if (i != pointId)
+                newPoints->InsertNextPoint(points->GetPoint(i));
+        std::cout << points->GetNumberOfPoints() << std::endl;
+        points->ShallowCopy(newPoints);
+        std::cout << points->GetNumberOfPoints() << std::endl;
+    }
+
+    vtkTypeMacro(InteractorStylePointPicker<T>, T);
+
+    InteractorStylePointPicker<T>()
+    {
+        this->trackedPointIds = vtkSmartPointer<vtkIdList>::New();
         this->trackedPoints = vtkSmartPointer<vtkPoints>::New();
         this->pointPicker = vtkSmartPointer<vtkPointPicker>::New();
         this->pointPicker->SetTolerance(0.01);
@@ -88,15 +100,36 @@ public:
 
     void OnLeftButtonUp() override
     {
-        if (this->pointPicker->GetPointId() != -1 && this->Interactor->GetAltKey())
+        const vtkIdType pickedPointId = this->pointPicker->GetPointId();
+        if (pickedPointId != -1 && this->Interactor->GetAltKey() && this->trackedPointIds->IsId(pickedPointId) == -1)
         {
             double* pickedPosition = this->pointPicker->GetPickPosition();
             this->trackedPoints->InsertNextPoint(pickedPosition);
+            this->trackedPointIds->InsertNextId(pickedPointId);
+            std::cout << "Picked point id: " << pickedPointId << std::endl;
             this->trackedPoints->Modified();
         }
         T::OnLeftButtonUp();
     }
+
+    void OnRightButtonUp() override
+    {
+        const vtkIdType pickedPointId = this->pointPicker->GetPointId();
+        if (pickedPointId != -1 && this->Interactor->GetAltKey())
+        {
+            const vtkIdType ptId = this->trackedPointIds->FindIdLocation(pickedPointId);
+            std::cout << "Picked point id: " << pickedPointId << std::endl;
+            std::cout << "Picked point id id: " << ptId << std::endl;
+            this->trackedPointIds->DeleteId(pickedPointId);
+            this->trackedPointIds->Squeeze();
+            std::cout << this->trackedPointIds->GetNumberOfIds() << std::endl;
+            DeletePointId(ptId, this->trackedPoints);
+            this->trackedPoints->Modified();
+        }
+        T::OnRightButtonUp();
+    }
 private:
+    vtkSmartPointer<vtkIdList> trackedPointIds;
     vtkSmartPointer<vtkPoints> trackedPoints;
     vtkSmartPointer<vtkActor> observedActor;
 

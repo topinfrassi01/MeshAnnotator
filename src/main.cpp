@@ -16,8 +16,8 @@
 #include <vtkPolyData.h>
 #include <vtkPointPicker.h>
 
-#include "InteractorStyleCellTrackerWrapper.h"
-#include "InteractorStylePointTrackerWrapper.h"
+#include "InteractorStyleCellPicker.h"
+#include "InteractorStylePointPicker.h"
 
 int main()
 {
@@ -44,44 +44,45 @@ int main()
     vtkNew<vtkRenderWindowInteractor> interactor;
     interactor->SetRenderWindow(renderWindow);
 
-    vtkNew<InteractorStyleCellTrackerWrapper<vtkInteractorStyleTrackballCamera>> style;
+    vtkNew<InteractorStylePointPicker<vtkInteractorStyleTrackballCamera>> style;
     style->SetObservedActor(actor);
     interactor->SetInteractorStyle(style);
 
-    // vtkNew<CellsPickingCallback> pickingCallback;
-    // pickingCallback->SetObservedActor(actor);
-    // pickingCallback->RegisterInteractorObservers(interactor);
+    // Testing for point picking
+    auto glyphPolyData = vtkSmartPointer<vtkPolyData>::New();
+    glyphPolyData->SetPoints(style->GetTrackedPoints().Get());
 
-    // auto glyphPolyData = vtkSmartPointer<vtkPolyData>::New();
-    // glyphPolyData->SetPoints(style->GetTrackedPoints().Get());
+    auto glyphFilterPolyData = vtkSmartPointer<vtkVertexGlyphFilter>::New();
+    glyphFilterPolyData->SetInputData(glyphPolyData);
+    glyphFilterPolyData->Update();
 
-    // auto glyphFilterPolyData = vtkSmartPointer<vtkVertexGlyphFilter>::New();
-    // glyphFilterPolyData->SetInputData(glyphPolyData);
-    // glyphFilterPolyData->Update();
+    auto glyphMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    glyphMapper->SetInputConnection(glyphFilterPolyData->GetOutputPort());
 
-    // auto glyphMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    // glyphMapper->SetInputConnection(glyphFilterPolyData->GetOutputPort());
-
-    // auto glyphActor = vtkSmartPointer<vtkActor>::New();
-    // glyphActor->SetMapper(glyphMapper);
-    // glyphActor->GetProperty()->SetPointSize(10);
-    // glyphActor->GetProperty()->SetColor(0, 255, 0);
+    auto glyphActor = vtkSmartPointer<vtkActor>::New();
+    glyphActor->SetMapper(glyphMapper);
+    glyphActor->GetProperty()->SetPointSize(10);
+    glyphActor->GetProperty()->SetColor(0, 255, 0);
     
-    // renderer->AddActor(glyphActor);
+    renderer->AddActor(glyphActor);
 
-    vtkNew<vtkGeometryFilter> geometryFilter;
-    geometryFilter->SetInputConnection(style->GetExtractSelectedCells()->GetOutputPort());
-    geometryFilter->Update();
+    // Testing for cell picking
+    // vtkNew<InteractorStyleCellPicker<vtkInteractorStyleTrackballCamera>> style;
+    // style->SetObservedActor(actor);
+    // interactor->SetInteractorStyle(style);
+    // vtkNew<vtkGeometryFilter> geometryFilter;
+    // geometryFilter->SetInputConnection(style->GetExtractSelectedCells()->GetOutputPort());
+    // geometryFilter->Update();
 
-    auto highlightMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    highlightMapper->SetInputConnection(geometryFilter->GetOutputPort());
-    highlightMapper->Update(); 
+    // auto highlightMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    // highlightMapper->SetInputConnection(geometryFilter->GetOutputPort());
+    // highlightMapper->Update(); 
 
-    auto selectedCellActor = vtkSmartPointer<vtkActor>::New();
-    selectedCellActor->SetMapper(highlightMapper);
-    selectedCellActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
+    // auto selectedCellActor = vtkSmartPointer<vtkActor>::New();
+    // selectedCellActor->SetMapper(highlightMapper);
+    // selectedCellActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
     
-    renderer->AddActor(selectedCellActor);
+    // renderer->AddActor(selectedCellActor);
 
     renderWindow->Render();
     interactor->Start();

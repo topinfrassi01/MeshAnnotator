@@ -4,6 +4,9 @@
   "dependencies": [
     "fmt",
     "catch2",
-    "vtk"
+    {
+        "name": "vtk",
+        "features": [ "qt" ]
+    }
   ]
 }

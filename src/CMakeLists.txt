@@ -1,6 +1,3 @@
-# Link to vcpkg-provided libraries
-find_package(fmt CONFIG REQUIRED)
-
 find_package(VTK COMPONENTS
   FiltersSources
   FiltersGeometry
@@ -9,9 +6,29 @@ find_package(VTK COMPONENTS
   InteractionStyle
   InteractionWidgets
   GUISupportQt
+  RenderingQt
   REQUIRED)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)  
+if(NOT DEFINED VTK_QT_VERSION)
+  set(VTK_QT_VERSION 6)
+endif()
+
+set(qt_components Core Gui Widgets)
+if(${VTK_QT_VERSION} VERSION_GREATER_EQUAL 6)
+  list(APPEND qt_components OpenGLWidgets)
+endif()
+
+list(SORT qt_components)
+# We have ui files, so this will also bring in the macro:
+#   qt5_wrap_ui or qt_wrap_ui from Widgets.
+find_package(Qt${VTK_QT_VERSION} REQUIRED COMPONENTS ${qt_components})
+
+foreach(_qt_comp IN LISTS qt_components)
+  list(APPEND qt_modules "Qt${VTK_QT_VERSION}::${_qt_comp}")
+endforeach()
+
+message (STATUS "VTK_VERSION: ${VTK_VERSION}, Qt Version: ${Qt${VTK_QT_VERSION}Widgets_VERSION}")
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
@@ -24,10 +41,15 @@ if(NOT(TARGET VTK::GUISupportQt))
 endif()
 
 # Main executable
-add_executable(MeshAnnotator main.cpp InteractorStylePointPicker.h InteractorStyleCellPicker.h)
+add_executable(MeshAnnotator main.cpp vtkInteractorStyleTrackballCameraWithPicker.h InteractorStylePointPicker.h InteractorStyleCellPicker.h)
 
-target_link_libraries(MeshAnnotator PRIVATE Qt6::Widgets ${VTK_LIBRARIES})
+if (Qt${VTK_QT_VERSION}Widgets_VERSION VERSION_LESS "5.11.0")
+  qt5_use_modules(MeshAnnotator ${qt_components})
+else()
+  target_link_libraries(MeshAnnotator PRIVATE ${qt_modules})
+endif()
 
+target_link_libraries(MeshAnnotator PRIVATE ${VTK_LIBRARIES})
 # Ensure VTK modules are initialized correctly for the executable
 vtk_module_autoinit(
   TARGETS MeshAnnotator

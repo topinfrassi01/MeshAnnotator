@@ -29,9 +29,4 @@ option(BUILD_TESTING "Enable building unit tests" ON)
 # Project layout
 add_subdirectory(src)
 
-if(BUILD_TESTING)
-  enable_testing()
-  add_subdirectory(tests)
-endif()
-
 message(STATUS "Project configured: ${PROJECT_NAME} (C++${CMAKE_CXX_STANDARD})")

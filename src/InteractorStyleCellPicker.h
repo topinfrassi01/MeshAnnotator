@@ -1,6 +1,7 @@
 #pragma once
 
-#include <vtkSmartPointer.h>
+#include "vtkInteractorStyleTrackballCameraWithPicker.h"
+
 #include <vtkCellPicker.h>
 #include <vtkInteractorStyle.h>
 #include <vtkVertexGlyphFilter.h>
@@ -9,25 +10,25 @@
 #include <vtkIdList.h>
 #include <vtkExtractCells.h>
 #include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
 #include <vtkGeometryFilter.h>
 
-template <class T>
-class InteractorStyleCellPicker : public T
+using InteractorStyleCellPickerBase = vtkInteractorStyleTrackballCameraWithPicker<vtkIdList>;
+
+class InteractorStyleCellPicker : public InteractorStyleCellPickerBase
 {
 public:
-    static InteractorStyleCellPicker<T>* New()
+    static InteractorStyleCellPicker* New()
     {
         return new InteractorStyleCellPicker();
     }
 
-    vtkTypeMacro(InteractorStyleCellPicker<T>, T);
+    vtkTypeMacro(InteractorStyleCellPicker, InteractorStyleCellPickerBase);
 
-    InteractorStyleCellPicker<T>()
+    InteractorStyleCellPicker()
         : isInSelectionMode(false), isAdding(false), isDeleting(false)
     {
         this->extractSelectedCells = vtkSmartPointer<vtkExtractCells>::New();
-        this->selectedCellIds = vtkSmartPointer<vtkIdList>::New();
+
         this->cellPicker = vtkSmartPointer<vtkCellPicker>::New();
         this->cellPicker->SetPickFromList(true);
         this->cellPicker->SetTolerance(0.01);
@@ -39,46 +40,15 @@ public:
         this->highlightedCellActor = vtkSmartPointer<vtkActor>::New();
     }
 
-    inline void SetObservedActor(vtkSmartPointer<vtkActor> actor) {
-        this->observedActor = actor;
-        this->extractSelectedCells->SetInputData(this->observedActor->GetMapper()->GetInput());
+    void SetObservedActor(vtkSmartPointer<vtkActor> actor) override {
+        InteractorStyleCellPickerBase::SetObservedActor(actor);
+        //this->extractSelectedCells->SetInputData(this->observedActor->GetMapper()->GetInput());
         this->cellPicker->AddPickList(this->observedActor);
-    }
-
-    inline vtkSmartPointer<vtkIdList> GetSelectedCellIds() { return this->selectedCellIds; }
-    inline const vtkSmartPointer<vtkExtractCells> GetExtractSelectedCells() { return this->extractSelectedCells; }
-
-    void InsertPickedCellId(const vtkIdType& cellId)
-    {
-        if (cellId == -1 || this->selectedCellIds->IsId(cellId) >= 0)
-            return;
-
-        this->selectedCellIds->InsertNextId(cellId);
-
-        // We need to do this this way becayse vtkIdList doesn't fire "Modified" event.
-        extractSelectedCells->SetCellList(this->selectedCellIds);
-        extractSelectedCells->Modified();
-
-        std::cout << "Selected cell ID: " << cellId << std::endl;
-    }
-
-    void RemovePickedCellId(const vtkIdType& cellId)
-    {
-        if (cellId == -1 || this->selectedCellIds->IsId(cellId) == -1)
-            return;
-
-        this->selectedCellIds->DeleteId(cellId);
-
-        // We need to do this this way becayse vtkIdList doesn't fire "Modified" event.
-        extractSelectedCells->SetCellList(this->selectedCellIds);
-        extractSelectedCells->Modified();
-
-        std::cout << "Removed cell ID: " << cellId << std::endl;
     }
 
     void OnKeyPress() override
     {
-        T::OnKeyPress();
+        InteractorStyleCellPickerBase::OnKeyPress();
         // Avoid changing isInSelectionMode if state is already frozen as OnKeyPress launches multiples times if held down
         if (this->isInSelectionMode)
             return;
@@ -94,7 +64,7 @@ public:
         if (key == "Alt_L")
             this->isInSelectionMode = false;
             
-        T::OnKeyRelease();
+        InteractorStyleCellPickerBase::OnKeyRelease();
     }
 
     void OnLeftButtonDown() override
@@ -102,7 +72,7 @@ public:
         if (isInSelectionMode)
             this->isAdding = true;
 
-        T::OnLeftButtonDown();
+        InteractorStyleCellPickerBase::OnLeftButtonDown();
     }
 
     void OnLeftButtonUp() override
@@ -115,7 +85,7 @@ public:
 
         this->isAdding = false;
 
-        T::OnLeftButtonUp();
+        InteractorStyleCellPickerBase::OnLeftButtonUp();
     }
 
     void OnRightButtonDown() override
@@ -123,7 +93,7 @@ public:
         if (isInSelectionMode)
             this->isDeleting = true;
 
-        T::OnRightButtonDown();
+        InteractorStyleCellPickerBase::OnRightButtonDown();
     }
 
     void OnRightButtonUp() override
@@ -134,26 +104,20 @@ public:
             RemovePickedCellId(cellId);
         }
         this->isDeleting = false;
-        T::OnRightButtonUp();
+        InteractorStyleCellPickerBase::OnRightButtonUp();
     }
     
     void Rotate() override
     {
         if (!this->isInSelectionMode)
-            T::Rotate();
+            InteractorStyleCellPickerBase::Rotate();
     }
 
     void Dolly() override
     {
         if (!this->isInSelectionMode)
-            T::Pan();
+            InteractorStyleCellPickerBase::Dolly();
     }
-
-    // void Pan() override
-    // {
-    //     if (!this->isInSelectionMode)
-    //         T::Pan();
-    // }
 
     void OnMouseMove() override
     {
@@ -168,7 +132,7 @@ public:
         {
             this->GetCurrentRenderer()->RemoveActor(this->highlightedCellActor);
             this->GetCurrentRenderer()->GetRenderWindow()->Render();
-            T::OnMouseMove();
+            InteractorStyleCellPickerBase::OnMouseMove();
             return;
         }
 
@@ -179,7 +143,33 @@ public:
         else if (this->isDeleting)
             RemovePickedCellId(cellId);
 
-        T::OnMouseMove();
+        InteractorStyleCellPickerBase::OnMouseMove();
+    }
+
+    //inline const vtkSmartPointer<vtkExtractCells> GetExtractSelectedCells() { return this->extractSelectedCells; }
+private:
+    void InsertPickedCellId(const vtkIdType& cellId)
+    {
+        if (cellId == -1 || this->pickedObject->IsId(cellId) >= 0)
+            return;
+
+        this->pickedObject->InsertNextId(cellId);
+        this->pickedObject->Modified();
+        // We need to do this this way becayse vtkIdList doesn't fire "Modified" event.
+        extractSelectedCells->SetCellList(this->pickedObject);
+        extractSelectedCells->Modified();
+    }
+
+    void RemovePickedCellId(const vtkIdType& cellId)
+    {
+        if (cellId == -1 || this->pickedObject->IsId(cellId) == -1)
+            return;
+
+        this->pickedObject->DeleteId(cellId);
+        this->pickedObject->Modified();
+        // We need to do this this way becayse vtkIdList doesn't fire "Modified" event.
+        extractSelectedCells->SetCellList(this->pickedObject);
+        extractSelectedCells->Modified();
     }
 
     void HighlightSelectedCell(const vtkIdType cellId)
@@ -212,8 +202,6 @@ private:
     bool isDeleting;
 
     vtkSmartPointer<vtkExtractCells> extractSelectedCells;
-    vtkSmartPointer<vtkIdList> selectedCellIds;
-    vtkSmartPointer<vtkActor> observedActor;
     vtkSmartPointer<vtkCellPicker> cellPicker;
 
     vtkSmartPointer<vtkActor> highlightedCellActor;

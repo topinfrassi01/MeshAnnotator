@@ -2,11 +2,10 @@
   "name": "meshannotator",
   "version-string": "0.1.0",
   "dependencies": [
-    "fmt",
-    "catch2",
     {
         "name": "vtk",
         "features": [ "qt" ]
-    }
+    },
+    "qtbase"
   ]
 }

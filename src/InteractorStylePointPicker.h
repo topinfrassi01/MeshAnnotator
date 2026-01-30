@@ -1,40 +1,27 @@
 #pragma once
+#include "vtkInteractorStyleTrackballCameraWithPicker.h"
 
-#include <vtkSmartPointer.h>
 #include <vtkPointPicker.h>
 #include <vtkInteractorStyle.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
 
-template <class T>
-class InteractorStylePointPicker : public T
+using InteractorStylePointPickerBase = vtkInteractorStyleTrackballCameraWithPicker<vtkPoints>;
+
+class InteractorStylePointPicker : public InteractorStylePointPickerBase
 {
 public:
-    static InteractorStylePointPicker<T>* New()
+    static InteractorStylePointPicker* New()
     {
         return new InteractorStylePointPicker();
     }
+    vtkTypeMacro(InteractorStylePointPicker, InteractorStylePointPickerBase);
 
-    void DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points)
-    {
-        auto newPoints = vtkSmartPointer<vtkPoints>::New();
-        for(vtkIdType i = 0; i < points->GetNumberOfPoints(); i++)
-            if (i != pointId)
-                newPoints->InsertNextPoint(points->GetPoint(i));
-        std::cout << points->GetNumberOfPoints() << std::endl;
-        points->ShallowCopy(newPoints);
-        std::cout << points->GetNumberOfPoints() << std::endl;
-    }
-
-    vtkTypeMacro(InteractorStylePointPicker<T>, T);
-
-    InteractorStylePointPicker<T>()
+    InteractorStylePointPicker()
     {
         this->trackedPointIds = vtkSmartPointer<vtkIdList>::New();
-        this->trackedPoints = vtkSmartPointer<vtkPoints>::New();
         this->pointPicker = vtkSmartPointer<vtkPointPicker>::New();
         this->pointPicker->SetTolerance(0.01);
         this->pointPicker->SetPickFromList(true);
@@ -56,11 +43,10 @@ public:
         this->glyphActor->GetProperty()->SetPointSize(10);
         this->glyphActor->GetProperty()->SetColor(255, 0, 0);
     }
-    inline const vtkSmartPointer<vtkPoints> GetTrackedPoints() { return this->trackedPoints; }
 
-    inline void SetObservedActor(vtkSmartPointer<vtkActor> actor) {
-        this->observedActor = actor;
-        this->pointPicker->AddPickList(actor);
+    void SetObservedActor(vtkSmartPointer<vtkActor> actor) override {
+        InteractorStylePointPickerBase::SetObservedActor(actor);
+        this->pointPicker->AddPickList(this->observedActor);
     }
 
     void OnMouseMove() override
@@ -78,7 +64,7 @@ public:
         {
             this->glyphActor->VisibilityOff();
             this->GetCurrentRenderer()->GetRenderWindow()->Render();
-            T::OnMouseMove();
+            InteractorStylePointPickerBase::OnMouseMove();
             return;
         }
 
@@ -95,7 +81,7 @@ public:
         this->GetCurrentRenderer()->AddActor(this->glyphActor);
         this->GetCurrentRenderer()->GetRenderWindow()->Render();
 
-        T::OnMouseMove();
+        InteractorStylePointPickerBase::OnMouseMove();
     }
 
     void OnLeftButtonUp() override
@@ -104,12 +90,12 @@ public:
         if (pickedPointId != -1 && this->Interactor->GetAltKey() && this->trackedPointIds->IsId(pickedPointId) == -1)
         {
             double* pickedPosition = this->pointPicker->GetPickPosition();
-            this->trackedPoints->InsertNextPoint(pickedPosition);
+
+            this->pickedObject->InsertNextPoint(pickedPosition);
             this->trackedPointIds->InsertNextId(pickedPointId);
-            std::cout << "Picked point id: " << pickedPointId << std::endl;
-            this->trackedPoints->Modified();
+            this->pickedObject->Modified();
         }
-        T::OnLeftButtonUp();
+        InteractorStylePointPickerBase::OnLeftButtonUp();
     }
 
     void OnRightButtonUp() override
@@ -118,20 +104,27 @@ public:
         if (pickedPointId != -1 && this->Interactor->GetAltKey())
         {
             const vtkIdType ptId = this->trackedPointIds->FindIdLocation(pickedPointId);
-            std::cout << "Picked point id: " << pickedPointId << std::endl;
-            std::cout << "Picked point id id: " << ptId << std::endl;
             this->trackedPointIds->DeleteId(pickedPointId);
             this->trackedPointIds->Squeeze();
-            std::cout << this->trackedPointIds->GetNumberOfIds() << std::endl;
-            DeletePointId(ptId, this->trackedPoints);
-            this->trackedPoints->Modified();
+            
+            DeletePointId(ptId, this->pickedObject);
+            this->pickedObject->Modified();
         }
-        T::OnRightButtonUp();
+        InteractorStylePointPickerBase::OnRightButtonUp();
     }
 private:
+    void DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points)
+    {
+        auto newPoints = vtkSmartPointer<vtkPoints>::New();
+        for(vtkIdType i = 0; i < points->GetNumberOfPoints(); i++)
+            if (i != pointId)
+                newPoints->InsertNextPoint(points->GetPoint(i));
+
+        points->ShallowCopy(newPoints);
+    }
+
+private:
     vtkSmartPointer<vtkIdList> trackedPointIds;
-    vtkSmartPointer<vtkPoints> trackedPoints;
-    vtkSmartPointer<vtkActor> observedActor;
 
     vtkSmartPointer<vtkPointPicker> pointPicker;
     vtkSmartPointer<vtkPolyDataMapper> glyphMapper;

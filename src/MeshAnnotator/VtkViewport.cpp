@@ -3,6 +3,7 @@
 #include <QVBoxLayout>
 #include <QVTKOpenGLNativeWidget.h>
 
+#include <vtkPLYReader.h>
 #include <vtkNew.h>
 #include <vtkActor.h>
 #include <vtkRenderer.h>
@@ -31,26 +32,14 @@ VtkViewport::VtkViewport(QWidget* parent)
     vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
     vtkWidget->setRenderWindow(renderWindow);
 
-    // Geometry
-    vtkNew<vtkConeSource> cone;
-    cone->SetResolution(30);
-
-    vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputConnection(cone->GetOutputPort());
-
-    vtkNew<vtkActor> actor;
-    actor->SetMapper(mapper);
-
     // Renderer
-    vtkNew<vtkRenderer> renderer;
-    renderer->AddActor(actor);
+    renderer = vtkSmartPointer<vtkRenderer>::New();
     renderer->SetBackground(0.1, 0.2, 0.4);
     renderWindow->AddRenderer(renderer);
 
     // Picking style
-    vtkNew<InteractorStylePointPicker> style;
-    style->SetObservedActor(actor);
-    vtkWidget->interactor()->SetInteractorStyle(style);
+    currentPickerStyle = vtkSmartPointer<InteractorStylePointPicker>::New();
+    vtkWidget->interactor()->SetInteractorStyle(currentPickerStyle);
 
     // TODO : To delete as visualisation is handled in the interactor now. Kept only to remember how to catch events.
     // struct CallbackData
@@ -96,4 +85,25 @@ void VtkViewport::setPickerMode(int mode)
 {
     std::cout << std::to_string(mode) << std::endl;
     // switch picker styles here later
+}
+
+void VtkViewport::loadMesh(std::string path)
+{
+    auto reader = vtkSmartPointer<vtkPLYReader>::New();
+    reader->SetFileName(path.c_str());
+    reader->Update();
+    
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(reader->GetOutput());
+
+    if (this->currentActor)
+        renderer->RemoveAllViewProps();
+    else
+        this->currentActor = vtkSmartPointer<vtkActor>::New();
+
+    this->currentActor->SetMapper(mapper);
+
+    currentPickerStyle->SetObservedActor(this->currentActor);
+    renderer->AddActor(this->currentActor);
+    std::cout << path;
 }

@@ -3,7 +3,9 @@
 #include <QWidget>
 #include <vector>
 
+#include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
+#include "InteractorStylePointPicker.h"
 
 class QVTKOpenGLNativeWidget;
 
@@ -19,7 +21,12 @@ signals:
 
 public slots:
     void setPickerMode(int mode);
+    void loadMesh(std::string path);
 
 private:
+    vtkSmartPointer<vtkRenderer> renderer;
+    vtkSmartPointer<vtkActor> currentActor;
+    // TODO : Need to remove template from those functions as it makes abstracting impossible.
+    vtkSmartPointer<InteractorStylePointPicker> currentPickerStyle;
     QVTKOpenGLNativeWidget* vtkWidget;
 };

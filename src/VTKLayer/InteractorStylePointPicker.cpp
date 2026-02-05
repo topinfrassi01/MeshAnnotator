@@ -28,18 +28,28 @@
         glyphFilterPolyData->SetInputData(glyphPolyData);
         glyphFilterPolyData->Update();
 
-        this->glyphMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        this->glyphMapper->SetInputConnection(glyphFilterPolyData->GetOutputPort());
+        this->highlightedPointGlyphMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+        this->highlightedPointGlyphMapper->SetInputConnection(glyphFilterPolyData->GetOutputPort());
 
-        this->glyphActor = vtkSmartPointer<vtkActor>::New();
-        this->glyphActor->SetMapper(this->glyphMapper);
-        this->glyphActor->GetProperty()->SetPointSize(10);
-        this->glyphActor->GetProperty()->SetColor(255, 0, 0);
+        this->highlightedPointActor = vtkSmartPointer<vtkActor>::New();
+        this->highlightedPointActor->SetMapper(this->highlightedPointGlyphMapper);
+        this->highlightedPointActor->GetProperty()->SetPointSize(10);
+        this->highlightedPointActor->GetProperty()->SetColor(255, 0, 0);
     }
 
     void InteractorStylePointPicker::SetObservedActor(vtkSmartPointer<vtkActor> actor) {
         InteractorStylePointPickerBase::SetObservedActor(actor);
         this->pointPicker->AddPickList(this->observedActor);
+
+        this->selectedPointsData = vtkSmartPointer<vtkPolyData>::New();
+        this->selectedPointsData->SetPoints(this->GetPickedObject().Get());
+
+        auto glyphFilterPolyData = vtkSmartPointer<vtkVertexGlyphFilter>::New();
+        glyphFilterPolyData->SetInputData(this->selectedPointsData);
+        glyphFilterPolyData->Update();
+
+        this->selectedPointsMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+        this->selectedPointsMapper->SetInputConnection(glyphFilterPolyData->GetOutputPort());
     }
 
     void InteractorStylePointPicker::OnMouseMove()
@@ -55,23 +65,22 @@
 
         if (pointId == -1)
         {
-            this->glyphActor->VisibilityOff();
+            this->highlightedPointActor->VisibilityOff();
             this->GetCurrentRenderer()->GetRenderWindow()->Render();
             InteractorStylePointPickerBase::OnMouseMove();
             return;
         }
 
-        this->glyphActor->VisibilityOn();
+        this->highlightedPointActor->VisibilityOn();
 
-        vtkPoints *points = this->glyphMapper->GetInput()->GetPoints();
+        vtkPoints *points = this->highlightedPointGlyphMapper->GetInput()->GetPoints();
         points->SetNumberOfPoints(1);
 
         points->SetPoint(0, pickedPosition);
         points->InsertNextPoint(pickedPosition);
-        points->Modified();
-        this->glyphMapper->GetInput()->Modified();
+        this->highlightedPointGlyphMapper->Modified();
 
-        this->GetCurrentRenderer()->AddActor(this->glyphActor);
+        this->GetCurrentRenderer()->AddActor(this->highlightedPointActor);
         this->GetCurrentRenderer()->GetRenderWindow()->Render();
 
         InteractorStylePointPickerBase::OnMouseMove();
@@ -82,6 +91,14 @@
         const vtkIdType pickedPointId = this->pointPicker->GetPointId();
         if (pickedPointId != -1 && this->Interactor->GetAltKey() && this->trackedPointIds->IsId(pickedPointId) == -1)
         {
+            if (!this->selectedPointsActor)
+            {               
+                this->selectedPointsActor = vtkSmartPointer<vtkActor>::New();
+                this->selectedPointsActor->SetMapper(this->selectedPointsMapper);
+                this->selectedPointsActor->GetProperty()->SetPointSize(10);
+                this->selectedPointsActor->GetProperty()->SetColor(0, 255, 0);
+                this->GetCurrentRenderer()->AddActor(this->selectedPointsActor);
+            }
             double* pickedPosition = this->pointPicker->GetPickPosition();
 
             this->pickedObject->InsertNextPoint(pickedPosition);

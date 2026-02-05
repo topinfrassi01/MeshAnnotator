@@ -15,6 +15,7 @@
 #include <vtkGeometryFilter.h>
 
 #include "InteractorStyleCellPicker.h"
+#include "InteractorStylePointPicker.h"
 
 VtkViewport::VtkViewport(QWidget* parent)
     : QWidget(parent)
@@ -47,47 +48,48 @@ VtkViewport::VtkViewport(QWidget* parent)
     renderWindow->AddRenderer(renderer);
 
     // Picking style
-    vtkNew<InteractorStyleCellPicker> style;
+    vtkNew<InteractorStylePointPicker> style;
     style->SetObservedActor(actor);
     vtkWidget->interactor()->SetInteractorStyle(style);
 
-    struct CallbackData
-    {
-        vtkExtractCells* extractCells;
-        vtkIdList* idList;
-    };
+    // TODO : To delete as visualisation is handled in the interactor now. Kept only to remember how to catch events.
+    // struct CallbackData
+    // {
+    //     vtkExtractCells* extractCells;
+    //     vtkIdList* idList;
+    // };
 
-    vtkNew<vtkExtractCells> extractCells;
-    extractCells->SetInputData(actor->GetMapper()->GetInput());
+    // vtkNew<vtkExtractCells> extractCells;
+    // extractCells->SetInputData(actor->GetMapper()->GetInput());
 
-    vtkNew<vtkGeometryFilter> geometryFilter;
-    geometryFilter->SetInputConnection(extractCells->GetOutputPort());
-    geometryFilter->Update();
+    // vtkNew<vtkGeometryFilter> geometryFilter;
+    // geometryFilter->SetInputConnection(extractCells->GetOutputPort());
+    // geometryFilter->Update();
 
-    auto highlightMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    highlightMapper->SetInputConnection(geometryFilter->GetOutputPort());
-    highlightMapper->Update();
+    // auto highlightMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    // highlightMapper->SetInputConnection(geometryFilter->GetOutputPort());
+    // highlightMapper->Update();
 
-    auto selectedCellActor = vtkSmartPointer<vtkActor>::New();
-    selectedCellActor->SetMapper(highlightMapper);
-    selectedCellActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
+    // auto selectedCellActor = vtkSmartPointer<vtkActor>::New();
+    // selectedCellActor->SetMapper(highlightMapper);
+    // selectedCellActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
 
-    renderer->AddActor(selectedCellActor);
-    auto* cbData = new CallbackData{
-        extractCells.Get(),
-        style->GetPickedObject().Get()
-    };
+    // renderer->AddActor(selectedCellActor);
+    // auto* cbData = new CallbackData{
+    //     extractCells.Get(),
+    //     style->GetPickedObject().Get()
+    // };
 
-    vtkNew<vtkCallbackCommand> callback;
-    callback->SetClientData(cbData);
-    callback->SetCallback([](vtkObject*, unsigned long, void* clientData, void*)
-    {
-        auto* data = static_cast<CallbackData*>(clientData);
-        data->extractCells->SetCellList(data->idList);
-        data->extractCells->Modified();
-    });
+    // vtkNew<vtkCallbackCommand> callback;
+    // callback->SetClientData(cbData);
+    // callback->SetCallback([](vtkObject*, unsigned long, void* clientData, void*)
+    // {
+    //     auto* data = static_cast<CallbackData*>(clientData);
+    //     data->extractCells->SetCellList(data->idList);
+    //     data->extractCells->Modified();
+    // });
 
-    style->GetPickedObject()->AddObserver(vtkCommand::ModifiedEvent, callback);
+    //style->GetPickedObject()->AddObserver(vtkCommand::ModifiedEvent, callback);
 }
 
 void VtkViewport::setPickerMode(int mode)

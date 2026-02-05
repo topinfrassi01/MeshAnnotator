@@ -2,6 +2,8 @@
 
 #include "vtkInteractorStyleTrackballCameraWithPicker.h"
 
+#include <vtkExtractCells.h>
+#include <vtkGeometryFilter.h>
 #include <vtkCellPicker.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkIdList.h>
@@ -55,4 +57,9 @@ private:
     vtkSmartPointer<vtkActor> highlightedCellActor;
     vtkSmartPointer<vtkIdList> highlightedCellIdList;
     vtkSmartPointer<vtkPolyDataMapper> highlightedCellMapper;
+
+    vtkSmartPointer<vtkExtractCells> extractSelectedCells;
+    vtkSmartPointer<vtkGeometryFilter> geometryFilter;
+    vtkSmartPointer<vtkPolyDataMapper> selectedCellsMapper;
+    vtkSmartPointer<vtkActor> selectedCellsActor;
 };

@@ -34,8 +34,12 @@ private:
     void DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points);
 
     vtkSmartPointer<vtkIdList> trackedPointIds;
-
     vtkSmartPointer<vtkPointPicker> pointPicker;
-    vtkSmartPointer<vtkPolyDataMapper> glyphMapper;
-    vtkSmartPointer<vtkActor> glyphActor;
+
+    vtkSmartPointer<vtkPolyDataMapper> highlightedPointGlyphMapper;
+    vtkSmartPointer<vtkActor> highlightedPointActor;
+
+    vtkSmartPointer<vtkPolyData> selectedPointsData;
+    vtkSmartPointer<vtkPolyDataMapper> selectedPointsMapper;
+    vtkSmartPointer<vtkActor> selectedPointsActor;
 };

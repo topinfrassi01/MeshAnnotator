@@ -34,8 +34,18 @@ InteractorStyleCellPicker::InteractorStyleCellPicker()
 
 void InteractorStyleCellPicker::SetObservedActor(vtkSmartPointer<vtkActor> actor) {
     InteractorStyleCellPickerBase::SetObservedActor(actor);
-    //this->extractSelectedCells->SetInputData(this->observedActor->GetMapper()->GetInput());
     this->cellPicker->AddPickList(this->observedActor);
+
+    this->extractSelectedCells = vtkSmartPointer<vtkExtractCells>::New();
+    this->extractSelectedCells->SetInputData(this->observedActor->GetMapper()->GetInput());
+    this->extractSelectedCells->SetCellList(this->pickedObject);
+    this->extractSelectedCells->Update();
+    this->geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+    this->geometryFilter->SetInputConnection(this->extractSelectedCells->GetOutputPort());
+    this->geometryFilter->Update();
+    this->selectedCellsMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    this->selectedCellsMapper->SetInputConnection(this->geometryFilter->GetOutputPort());
+    this->selectedCellsMapper->Update();
 }
 
 void InteractorStyleCellPicker::OnKeyPress()
@@ -128,12 +138,12 @@ void InteractorStyleCellPicker::OnMouseMove()
         return;
     }
 
-    HighlightHoveredCell(cellId);
-
     if (this->isAdding)
         InsertPickedCellId(cellId);
     else if (this->isDeleting)
         RemovePickedCellId(cellId);
+
+    HighlightHoveredCell(cellId);
 
     InteractorStyleCellPickerBase::OnMouseMove();
 }
@@ -143,8 +153,18 @@ void InteractorStyleCellPicker::InsertPickedCellId(const vtkIdType& cellId)
     if (cellId == -1 || this->pickedObject->IsId(cellId) >= 0)
         return;
 
+    if (!this->selectedCellsActor)
+    {
+        this->selectedCellsActor = vtkSmartPointer<vtkActor>::New();
+        this->selectedCellsActor->SetMapper(this->selectedCellsMapper);
+        this->selectedCellsActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
+        this->GetCurrentRenderer()->AddActor(this->selectedCellsActor);
+    }
+
     this->pickedObject->InsertNextId(cellId);
     this->pickedObject->Modified();
+    this->extractSelectedCells->SetCellList(this->pickedObject.Get());
+    this->extractSelectedCells->Modified();
 }
 
 void InteractorStyleCellPicker::RemovePickedCellId(const vtkIdType& cellId)
@@ -154,11 +174,8 @@ void InteractorStyleCellPicker::RemovePickedCellId(const vtkIdType& cellId)
 
     this->pickedObject->DeleteId(cellId);
     this->pickedObject->Modified();
-}
-
-void InteractorStyleCellPicker::HighlightSelectedCells()
-{
-
+    this->extractSelectedCells->SetCellList(this->pickedObject.Get());
+    this->extractSelectedCells->Modified();
 }
 
 void InteractorStyleCellPicker::HighlightHoveredCell(const vtkIdType cellId)
@@ -175,12 +192,13 @@ void InteractorStyleCellPicker::HighlightHoveredCell(const vtkIdType cellId)
     geometryFilter->SetInputConnection(extractCells->GetOutputPort());
     geometryFilter->Update();
 
+    // TODO : Would like the highlight to be rendered above the selected cells.
     highlightedCellMapper->SetInputConnection(geometryFilter->GetOutputPort());
     highlightedCellMapper->Update();
 
     highlightedCellActor->SetMapper(highlightedCellMapper);
     highlightedCellActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
-
     this->GetCurrentRenderer()->AddActor(this->highlightedCellActor);
     this->GetCurrentRenderer()->GetRenderWindow()->Render();
+    
 }

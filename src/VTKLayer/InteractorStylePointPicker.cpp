@@ -1,4 +1,4 @@
-#pragma once
+#include "InteractorStylePointPicker.h"
 #include "vtkInteractorStyleTrackballCameraWithPicker.h"
 
 #include <vtkPointPicker.h>
@@ -6,20 +6,13 @@
 #include <vtkVertexGlyphFilter.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
+#include <vtkProperty.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
 #include <vtkPolyDataMapper.h>
 
-using InteractorStylePointPickerBase = vtkInteractorStyleTrackballCameraWithPicker<vtkPoints>;
-
-class InteractorStylePointPicker : public InteractorStylePointPickerBase
-{
-public:
-    static InteractorStylePointPicker* New()
-    {
-        return new InteractorStylePointPicker();
-    }
-    vtkTypeMacro(InteractorStylePointPicker, InteractorStylePointPickerBase);
-
-    InteractorStylePointPicker()
+    InteractorStylePointPicker::InteractorStylePointPicker()
     {
         this->trackedPointIds = vtkSmartPointer<vtkIdList>::New();
         this->pointPicker = vtkSmartPointer<vtkPointPicker>::New();
@@ -44,12 +37,12 @@ public:
         this->glyphActor->GetProperty()->SetColor(255, 0, 0);
     }
 
-    void SetObservedActor(vtkSmartPointer<vtkActor> actor) override {
+    void InteractorStylePointPicker::SetObservedActor(vtkSmartPointer<vtkActor> actor) {
         InteractorStylePointPickerBase::SetObservedActor(actor);
         this->pointPicker->AddPickList(this->observedActor);
     }
 
-    void OnMouseMove() override
+    void InteractorStylePointPicker::OnMouseMove()
     {
         const int x = this->Interactor->GetEventPosition()[0];
         const int y = this->Interactor->GetEventPosition()[1];
@@ -84,7 +77,7 @@ public:
         InteractorStylePointPickerBase::OnMouseMove();
     }
 
-    void OnLeftButtonUp() override
+    void InteractorStylePointPicker::OnLeftButtonUp()
     {
         const vtkIdType pickedPointId = this->pointPicker->GetPointId();
         if (pickedPointId != -1 && this->Interactor->GetAltKey() && this->trackedPointIds->IsId(pickedPointId) == -1)
@@ -98,7 +91,7 @@ public:
         InteractorStylePointPickerBase::OnLeftButtonUp();
     }
 
-    void OnRightButtonUp() override
+    void InteractorStylePointPicker::OnRightButtonUp()
     {
         const vtkIdType pickedPointId = this->pointPicker->GetPointId();
         if (pickedPointId != -1 && this->Interactor->GetAltKey())
@@ -112,8 +105,8 @@ public:
         }
         InteractorStylePointPickerBase::OnRightButtonUp();
     }
-private:
-    void DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points)
+
+    void InteractorStylePointPicker::DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points)
     {
         auto newPoints = vtkSmartPointer<vtkPoints>::New();
         for(vtkIdType i = 0; i < points->GetNumberOfPoints(); i++)
@@ -122,11 +115,3 @@ private:
 
         points->ShallowCopy(newPoints);
     }
-
-private:
-    vtkSmartPointer<vtkIdList> trackedPointIds;
-
-    vtkSmartPointer<vtkPointPicker> pointPicker;
-    vtkSmartPointer<vtkPolyDataMapper> glyphMapper;
-    vtkSmartPointer<vtkActor> glyphActor;
-};

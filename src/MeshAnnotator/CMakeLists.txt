@@ -1,10 +1,4 @@
 find_package(VTK COMPONENTS
-  FiltersSources
-  FiltersGeometry
-  RenderingCore
-  RenderingOpenGL2
-  InteractionStyle
-  InteractionWidgets
   GUISupportQt
   RenderingQt
   REQUIRED)
@@ -41,7 +35,8 @@ if(NOT(TARGET VTK::GUISupportQt))
 endif()
 
 # Main executable
-add_executable(MeshAnnotator main.cpp vtkInteractorStyleTrackballCameraWithPicker.h InteractorStylePointPicker.h InteractorStyleCellPicker.h)
+add_executable(MeshAnnotator ControlPanel.cpp VtkViewport.cpp mainwindow.cpp main.cpp)
+target_link_libraries(MeshAnnotator PRIVATE VTKLayer VTK::GUISupportQt VTK::RenderingQt)
 
 if (Qt${VTK_QT_VERSION}Widgets_VERSION VERSION_LESS "5.11.0")
   qt5_use_modules(MeshAnnotator ${qt_components})
@@ -49,10 +44,9 @@ else()
   target_link_libraries(MeshAnnotator PRIVATE ${qt_modules})
 endif()
 
-target_link_libraries(MeshAnnotator PRIVATE ${VTK_LIBRARIES})
 # Ensure VTK modules are initialized correctly for the executable
 vtk_module_autoinit(
   TARGETS MeshAnnotator
-  MODULES ${VTK_LIBRARIES}
+  MODULES VTK::GUISupportQt VTK::RenderingQt
 )
  

@@ -27,6 +27,7 @@ endif()
 option(BUILD_TESTING "Enable building unit tests" ON)
 
 # Project layout
-add_subdirectory(src)
+add_subdirectory(src/VTKLayer)
+add_subdirectory(src/MeshAnnotator)
 
 message(STATUS "Project configured: ${PROJECT_NAME} (C++${CMAKE_CXX_STANDARD})")

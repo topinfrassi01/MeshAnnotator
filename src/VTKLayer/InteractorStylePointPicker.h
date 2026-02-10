@@ -2,7 +2,7 @@
 
 #include "vtkInteractorStyleTrackballCameraWithPicker.h"
 
-#include <vtkPointPicker.h>
+#include <vtkCellPicker.h>
 #include <vtkInteractorStyle.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkPoints.h>
@@ -33,8 +33,8 @@ public:
 private:
     void DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points);
 
-    vtkSmartPointer<vtkIdList> trackedPointIds;
-    vtkSmartPointer<vtkPointPicker> pointPicker;
+    vtkSmartPointer<vtkIdList> trackedCellIds;
+    vtkSmartPointer<vtkCellPicker> pointPicker;
 
     vtkSmartPointer<vtkPolyDataMapper> highlightedPointGlyphMapper;
     vtkSmartPointer<vtkActor> highlightedPointActor;

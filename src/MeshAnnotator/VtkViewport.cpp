@@ -38,8 +38,7 @@ VtkViewport::VtkViewport(QWidget* parent)
     renderWindow->AddRenderer(renderer);
 
     // Picking style
-    currentPickerStyle = vtkSmartPointer<InteractorStylePointPicker>::New();
-    vtkWidget->interactor()->SetInteractorStyle(currentPickerStyle);
+    
 
     // TODO : To delete as visualisation is handled in the interactor now. Kept only to remember how to catch events.
     // struct CallbackData
@@ -103,7 +102,13 @@ void VtkViewport::loadMesh(std::string path)
 
     this->currentActor->SetMapper(mapper);
 
-    currentPickerStyle->SetObservedActor(this->currentActor);
     renderer->AddActor(this->currentActor);
+    
+    currentPickerStyle = vtkSmartPointer<InteractorStylePointPicker>::New();
+    currentPickerStyle->SetObservedActor(this->currentActor);
+    vtkWidget->interactor()->SetInteractorStyle(currentPickerStyle);
+    vtkWidget->setFocusPolicy(Qt::StrongFocus);
+    vtkWidget->setFocus();
+    std::cout << vtkWidget->hasFocus();
     std::cout << path;
 }

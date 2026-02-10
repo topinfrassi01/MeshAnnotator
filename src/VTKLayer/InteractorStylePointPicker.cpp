@@ -1,7 +1,7 @@
 #include "InteractorStylePointPicker.h"
 #include "vtkInteractorStyleTrackballCameraWithPicker.h"
 
-#include <vtkPointPicker.h>
+#include <vtkCellPicker.h>
 #include <vtkInteractorStyle.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkPoints.h>
@@ -14,9 +14,9 @@
 
     InteractorStylePointPicker::InteractorStylePointPicker()
     {
-        this->trackedPointIds = vtkSmartPointer<vtkIdList>::New();
-        this->pointPicker = vtkSmartPointer<vtkPointPicker>::New();
-        this->pointPicker->SetTolerance(0.01);
+        this->trackedCellIds = vtkSmartPointer<vtkIdList>::New();
+        this->pointPicker = vtkSmartPointer<vtkCellPicker>::New();
+        this->pointPicker->SetTolerance(0.001);
         this->pointPicker->SetPickFromList(true);
 
         vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
@@ -39,6 +39,7 @@
 
     void InteractorStylePointPicker::SetObservedActor(vtkSmartPointer<vtkActor> actor) {
         InteractorStylePointPickerBase::SetObservedActor(actor);
+        this->pointPicker->InitializePickList();
         this->pointPicker->AddPickList(this->observedActor);
 
         this->selectedPointsData = vtkSmartPointer<vtkPolyData>::New();
@@ -60,10 +61,9 @@
         this->FindPokedRenderer(x, y);
         this->pointPicker->Pick(x, y, 0, this->GetCurrentRenderer());
 
-        double *pickedPosition = this->pointPicker->GetPickPosition();
-        const vtkIdType pointId = this->pointPicker->GetPointId();
-
-        if (pointId == -1)
+        const vtkIdType& cellId = this->pointPicker->GetCellId();
+        
+        if (cellId == -1)
         {
             this->highlightedPointActor->VisibilityOff();
             this->GetCurrentRenderer()->GetRenderWindow()->Render();
@@ -71,13 +71,14 @@
             return;
         }
 
+        std::cout << cellId << std::endl;
         this->highlightedPointActor->VisibilityOn();
-
+        double* pointLocation = this->pointPicker->GetPickPosition();
+    
         vtkPoints *points = this->highlightedPointGlyphMapper->GetInput()->GetPoints();
         points->SetNumberOfPoints(1);
 
-        points->SetPoint(0, pickedPosition);
-        points->InsertNextPoint(pickedPosition);
+        points->SetPoint(0, pointLocation);
         this->highlightedPointGlyphMapper->Modified();
 
         this->GetCurrentRenderer()->AddActor(this->highlightedPointActor);
@@ -88,11 +89,12 @@
 
     void InteractorStylePointPicker::OnLeftButtonUp()
     {
-        const vtkIdType pickedPointId = this->pointPicker->GetPointId();
-        if (pickedPointId != -1 && this->Interactor->GetAltKey() && this->trackedPointIds->IsId(pickedPointId) == -1)
+        const vtkIdType pickedCellId = this->pointPicker->GetCellId();
+        
+        if (pickedCellId != -1 && this->Interactor->GetAltKey() && this->trackedCellIds->IsId(pickedCellId) == -1)
         {
             if (!this->selectedPointsActor)
-            {               
+            {
                 this->selectedPointsActor = vtkSmartPointer<vtkActor>::New();
                 this->selectedPointsActor->SetMapper(this->selectedPointsMapper);
                 this->selectedPointsActor->GetProperty()->SetPointSize(10);
@@ -102,7 +104,7 @@
             double* pickedPosition = this->pointPicker->GetPickPosition();
 
             this->pickedObject->InsertNextPoint(pickedPosition);
-            this->trackedPointIds->InsertNextId(pickedPointId);
+            this->trackedCellIds->InsertNextId(pickedCellId);
             this->pickedObject->Modified();
         }
         InteractorStylePointPickerBase::OnLeftButtonUp();
@@ -110,12 +112,12 @@
 
     void InteractorStylePointPicker::OnRightButtonUp()
     {
-        const vtkIdType pickedPointId = this->pointPicker->GetPointId();
-        if (pickedPointId != -1 && this->Interactor->GetAltKey())
+        const vtkIdType pickedCellId = this->pointPicker->GetCellId();
+        if (pickedCellId != -1 && this->Interactor->GetAltKey())
         {
-            const vtkIdType ptId = this->trackedPointIds->FindIdLocation(pickedPointId);
-            this->trackedPointIds->DeleteId(pickedPointId);
-            this->trackedPointIds->Squeeze();
+            const vtkIdType ptId = this->trackedCellIds->FindIdLocation(pickedCellId);
+            this->trackedCellIds->DeleteId(pickedCellId);
+            this->trackedCellIds->Squeeze();
             
             DeletePointId(ptId, this->pickedObject);
             this->pickedObject->Modified();
@@ -123,11 +125,11 @@
         InteractorStylePointPickerBase::OnRightButtonUp();
     }
 
-    void InteractorStylePointPicker::DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points)
+    void InteractorStylePointPicker::DeletePointId(const vtkIdType cellId, vtkSmartPointer<vtkPoints> points)
     {
         auto newPoints = vtkSmartPointer<vtkPoints>::New();
         for(vtkIdType i = 0; i < points->GetNumberOfPoints(); i++)
-            if (i != pointId)
+            if (i != cellId)
                 newPoints->InsertNextPoint(points->GetPoint(i));
 
         points->ShallowCopy(newPoints);

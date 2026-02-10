@@ -23,7 +23,7 @@ InteractorStyleCellPicker::InteractorStyleCellPicker()
     {
         this->cellPicker = vtkSmartPointer<vtkCellPicker>::New();
         this->cellPicker->SetPickFromList(true);
-        this->cellPicker->SetTolerance(0.01);
+        this->cellPicker->SetTolerance(0.001);
 
         this->highlightedCellIdList = vtkSmartPointer<vtkIdList>::New();
         this->highlightedCellIdList->SetNumberOfIds(1);
@@ -95,7 +95,7 @@ void InteractorStyleCellPicker::OnRightButtonDown()
     if (isInSelectionMode)
         this->isDeleting = true;
 
-    InteractorStyleCellPickerBase::OnRightButtonDown();
+    //InteractorStyleCellPickerBase::OnRightButtonDown();
 }
 
 void InteractorStyleCellPicker::OnRightButtonUp()
@@ -106,7 +106,7 @@ void InteractorStyleCellPicker::OnRightButtonUp()
         RemovePickedCellId(cellId);
     }
     this->isDeleting = false;
-    InteractorStyleCellPickerBase::OnRightButtonUp();
+    //InteractorStyleCellPickerBase::OnRightButtonUp();
 }
 
 void InteractorStyleCellPicker::Rotate()

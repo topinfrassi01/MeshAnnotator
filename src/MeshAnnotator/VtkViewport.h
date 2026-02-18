@@ -20,13 +20,15 @@ signals:
     void pickedObjectChanged();
 
 public slots:
-    void setPickerMode(int mode);
+    //void setCurrentPicker(int mode);
+    //void addNewPicker();
     void loadMesh(std::string path);
 
 private:
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkActor> currentActor;
     // TODO : Need to remove template from those functions as it makes abstracting impossible.
-    vtkSmartPointer<InteractorStylePointPicker> currentPickerStyle;
+    vtkSmartPointer<vtkInteractorStyleTrackballCameraWithPicker> currentPickerStyle;
+    std::vector<vtkSmartPointer<vtkInteractorStyleTrackballCameraWithPicker>> availablePickers;
     QVTKOpenGLNativeWidget* vtkWidget;
 };

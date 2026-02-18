@@ -1,5 +1,4 @@
 #include "InteractorStylePointPicker.h"
-#include "vtkInteractorStyleTrackballCameraWithPicker.h"
 
 #include <vtkCellPicker.h>
 #include <vtkInteractorStyle.h>
@@ -14,6 +13,7 @@
 
     InteractorStylePointPicker::InteractorStylePointPicker()
     {
+        this->pickedPoints = vtkSmartPointer<vtkPoints>::New();
         this->trackedCellIds = vtkSmartPointer<vtkIdList>::New();
         this->pointPicker = vtkSmartPointer<vtkCellPicker>::New();
         this->pointPicker->SetTolerance(0.001);
@@ -37,13 +37,18 @@
         this->highlightedPointActor->GetProperty()->SetColor(255, 0, 0);
     }
 
+    const void updateAnnotatedMesh(AnnotatedMesh& mesh)
+    {
+        //mesh.updatePointsAnnotations()
+    }
+
     void InteractorStylePointPicker::SetObservedActor(vtkSmartPointer<vtkActor> actor) {
-        InteractorStylePointPickerBase::SetObservedActor(actor);
+        vtkInteractorStyleTrackballCameraWithPicker::SetObservedActor(actor);
         this->pointPicker->InitializePickList();
         this->pointPicker->AddPickList(this->observedActor);
 
         this->selectedPointsData = vtkSmartPointer<vtkPolyData>::New();
-        this->selectedPointsData->SetPoints(this->GetPickedObject().Get());
+        this->selectedPointsData->SetPoints(this->pickedPoints.Get());
 
         auto glyphFilterPolyData = vtkSmartPointer<vtkVertexGlyphFilter>::New();
         glyphFilterPolyData->SetInputData(this->selectedPointsData);
@@ -67,7 +72,7 @@
         {
             this->highlightedPointActor->VisibilityOff();
             this->GetCurrentRenderer()->GetRenderWindow()->Render();
-            InteractorStylePointPickerBase::OnMouseMove();
+            vtkInteractorStyleTrackballCameraWithPicker::OnMouseMove();
             return;
         }
 
@@ -84,7 +89,7 @@
         this->GetCurrentRenderer()->AddActor(this->highlightedPointActor);
         this->GetCurrentRenderer()->GetRenderWindow()->Render();
 
-        InteractorStylePointPickerBase::OnMouseMove();
+        vtkInteractorStyleTrackballCameraWithPicker::OnMouseMove();
     }
 
     void InteractorStylePointPicker::OnLeftButtonUp()
@@ -103,11 +108,11 @@
             }
             double* pickedPosition = this->pointPicker->GetPickPosition();
 
-            this->pickedObject->InsertNextPoint(pickedPosition);
+            this->pickedPoints->InsertNextPoint(pickedPosition);
             this->trackedCellIds->InsertNextId(pickedCellId);
-            this->pickedObject->Modified();
+            this->pickedPoints->Modified();
         }
-        InteractorStylePointPickerBase::OnLeftButtonUp();
+        vtkInteractorStyleTrackballCameraWithPicker::OnLeftButtonUp();
     }
 
     void InteractorStylePointPicker::OnRightButtonUp()
@@ -119,10 +124,10 @@
             this->trackedCellIds->DeleteId(pickedCellId);
             this->trackedCellIds->Squeeze();
             
-            DeletePointId(ptId, this->pickedObject);
-            this->pickedObject->Modified();
+            DeletePointId(ptId, this->pickedPoints);
+            this->pickedPoints->Modified();
         }
-        InteractorStylePointPickerBase::OnRightButtonUp();
+        vtkInteractorStyleTrackballCameraWithPicker::OnRightButtonUp();
     }
 
     void InteractorStylePointPicker::DeletePointId(const vtkIdType cellId, vtkSmartPointer<vtkPoints> points)

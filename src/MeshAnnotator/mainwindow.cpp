@@ -26,9 +26,6 @@ MainWindow::MainWindow(QWidget* parent)
 
     setCentralWidget(vtkViewport);
 
-    connect(controlPanel, &ControlPanel::pickerModeChanged,
-            vtkViewport,  &VtkViewport::setPickerMode);
-
     connect(this, &MainWindow::meshLoaded, vtkViewport, &VtkViewport::loadMesh);
 }
 

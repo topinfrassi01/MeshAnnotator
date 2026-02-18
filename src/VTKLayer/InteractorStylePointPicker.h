@@ -13,16 +13,14 @@
 #include <vtkRenderWindow.h>
 #include <vtkPolyDataMapper.h>
 
-using InteractorStylePointPickerBase = vtkInteractorStyleTrackballCameraWithPicker<vtkPoints>;
-
-class InteractorStylePointPicker : public InteractorStylePointPickerBase
+class InteractorStylePointPicker : public vtkInteractorStyleTrackballCameraWithPicker
 {
 public:
     static InteractorStylePointPicker* New()
     {
         return new InteractorStylePointPicker();
     }
-    vtkTypeMacro(InteractorStylePointPicker, InteractorStylePointPickerBase);
+    vtkTypeMacro(InteractorStylePointPicker, vtkInteractorStyleTrackballCameraWithPicker);
 
     InteractorStylePointPicker();
 
@@ -30,9 +28,11 @@ public:
     void OnMouseMove() override;
     void OnLeftButtonUp() override;
     void OnRightButtonUp() override;
+    const void updateAnnotatedMesh(AnnotatedMesh& mesh) override;
 private:
     void DeletePointId(const vtkIdType pointId, vtkSmartPointer<vtkPoints> points);
 
+    vtkSmartPointer<vtkPoints> pickedPoints;
     vtkSmartPointer<vtkIdList> trackedCellIds;
     vtkSmartPointer<vtkCellPicker> pointPicker;
 

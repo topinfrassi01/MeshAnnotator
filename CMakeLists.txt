@@ -27,6 +27,7 @@ endif()
 option(BUILD_TESTING "Enable building unit tests" ON)
 
 # Project layout
+add_subdirectory(src/Core)
 add_subdirectory(src/VTKLayer)
 add_subdirectory(src/MeshAnnotator)
 

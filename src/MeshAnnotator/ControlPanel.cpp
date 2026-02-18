@@ -1,21 +1,32 @@
 #include "ControlPanel.h"
 
-#include <QVBoxLayout>
 #include <QComboBox>
+
+#include "PointPickerConfigurationTool.h"
 
 ControlPanel::ControlPanel(QWidget* parent): QWidget(parent)
 {
-    auto* layout = new QVBoxLayout(this);
-
-    pickerTypeComboBox = new QComboBox(this);
+    pickerTypeComboBox = new NewPickerComboBox(this);
+    mainLayout = new QVBoxLayout(this);
+    mainLayout->addWidget(pickerTypeComboBox);   
+    mainLayout->addStretch();
     
-    // pickerTypeComboBox->addItem("New picker...");
-    // pickerTypeComboBox->addItem("Point Picker");
-    // pickerTypeComboBox->addItem("Cell Picker");
+    connect(pickerTypeComboBox, &NewPickerComboBox::selectedPickerChanged,
+            this, &ControlPanel::createPicker);
 
-    layout->addWidget(pickerTypeComboBox);
-    layout->addStretch();
-    
-    connect(pickerTypeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ControlPanel::pickerModeChanged);
+    setLayout(mainLayout);
+}
+
+void ControlPanel::createPicker(const PickerType& type)
+{
+    QWidget* newPicker;
+    switch (type)
+    {
+        case PickerType::Points:
+            newPicker = new PointPickerConfigurationTool(this);
+        break;
+        case PickerType::Cells:
+        break;
+    }
+    mainLayout->addWidget(newPicker);
 }

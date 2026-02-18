@@ -1,10 +1,11 @@
 #pragma once
-#include <tuple>
-#include <vector>
-#include <QComboBox>
-#include <QWidget>
+
+#include "NewPickerComboBox.h"
+
+#include <QVBoxLayout>
 #include <vtkInteractorStyleTrackballCamera.h>
-//#include "vtkInteractorStyleTrackballCameraWithPicker.h"
+
+class QWidget;
 
 class ControlPanel: public QWidget
 {
@@ -14,8 +15,10 @@ public:
 
 signals:
 
-    void pickerModeChanged(int mode);
+private slots:
+    void createPicker(const PickerType& type);
 
 private:
-    QComboBox* pickerTypeComboBox;
+    NewPickerComboBox* pickerTypeComboBox;
+    QVBoxLayout* mainLayout;
 };

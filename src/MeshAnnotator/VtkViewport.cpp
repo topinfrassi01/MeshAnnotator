@@ -36,55 +36,19 @@ VtkViewport::VtkViewport(QWidget* parent)
     renderer = vtkSmartPointer<vtkRenderer>::New();
     renderer->SetBackground(0.1, 0.2, 0.4);
     renderWindow->AddRenderer(renderer);
-
-    // Picking style
-    
-
-    // TODO : To delete as visualisation is handled in the interactor now. Kept only to remember how to catch events.
-    // struct CallbackData
-    // {
-    //     vtkExtractCells* extractCells;
-    //     vtkIdList* idList;
-    // };
-
-    // vtkNew<vtkExtractCells> extractCells;
-    // extractCells->SetInputData(actor->GetMapper()->GetInput());
-
-    // vtkNew<vtkGeometryFilter> geometryFilter;
-    // geometryFilter->SetInputConnection(extractCells->GetOutputPort());
-    // geometryFilter->Update();
-
-    // auto highlightMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    // highlightMapper->SetInputConnection(geometryFilter->GetOutputPort());
-    // highlightMapper->Update();
-
-    // auto selectedCellActor = vtkSmartPointer<vtkActor>::New();
-    // selectedCellActor->SetMapper(highlightMapper);
-    // selectedCellActor->GetProperty()->SetColor(0.0, 1.0, 0.0);
-
-    // renderer->AddActor(selectedCellActor);
-    // auto* cbData = new CallbackData{
-    //     extractCells.Get(),
-    //     style->GetPickedObject().Get()
-    // };
-
-    // vtkNew<vtkCallbackCommand> callback;
-    // callback->SetClientData(cbData);
-    // callback->SetCallback([](vtkObject*, unsigned long, void* clientData, void*)
-    // {
-    //     auto* data = static_cast<CallbackData*>(clientData);
-    //     data->extractCells->SetCellList(data->idList);
-    //     data->extractCells->Modified();
-    // });
-
-    //style->GetPickedObject()->AddObserver(vtkCommand::ModifiedEvent, callback);
 }
 
-void VtkViewport::setPickerMode(int mode)
-{
-    std::cout << std::to_string(mode) << std::endl;
-    // switch picker styles here later
-}
+// void VtkViewport::setPickerMode(int mode)
+// {
+//     // currentPickerStyle = availablePickers.at(mode);
+//     // currentPickerStyle->SetObservedActor(this->currentActor);
+//     // // TODO : There.s a bug with the picker where it responds poorly before a zoom out/rotation is made
+//     // vtkWidget->interactor()->SetInteractorStyle(currentPickerStyle);
+//     // vtkWidget->setFocusPolicy(Qt::StrongFocus);
+//     // vtkWidget->setFocus();
+//     // std::cout << std::to_string(mode) << std::endl;
+//     // // switch picker styles here later
+// }
 
 void VtkViewport::loadMesh(std::string path)
 {
@@ -103,12 +67,4 @@ void VtkViewport::loadMesh(std::string path)
     this->currentActor->SetMapper(mapper);
 
     renderer->AddActor(this->currentActor);
-    
-    currentPickerStyle = vtkSmartPointer<InteractorStylePointPicker>::New();
-    currentPickerStyle->SetObservedActor(this->currentActor);
-    vtkWidget->interactor()->SetInteractorStyle(currentPickerStyle);
-    vtkWidget->setFocusPolicy(Qt::StrongFocus);
-    vtkWidget->setFocus();
-    std::cout << vtkWidget->hasFocus();
-    std::cout << path;
 }

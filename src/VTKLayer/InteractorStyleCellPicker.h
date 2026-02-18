@@ -9,9 +9,7 @@
 #include <vtkIdList.h>
 #include <vtkPolyDataMapper.h>
 
-using InteractorStyleCellPickerBase = vtkInteractorStyleTrackballCameraWithPicker<vtkIdList>;
-
-class InteractorStyleCellPicker : public InteractorStyleCellPickerBase
+class InteractorStyleCellPicker : public vtkInteractorStyleTrackballCameraWithPicker
 {
 public:
     static InteractorStyleCellPicker* New()
@@ -19,11 +17,13 @@ public:
         return new InteractorStyleCellPicker();
     }
 
-    vtkTypeMacro(InteractorStyleCellPicker, InteractorStyleCellPickerBase);
+    vtkTypeMacro(InteractorStyleCellPicker, vtkInteractorStyleTrackballCameraWithPicker);
 
     InteractorStyleCellPicker();
 
     void SetObservedActor(vtkSmartPointer<vtkActor> actor) override;
+
+    const void updateAnnotatedMesh(AnnotatedMesh& mesh) override;
 
     void OnKeyPress() override;
 
@@ -51,7 +51,7 @@ private:
     bool isInSelectionMode;
     bool isAdding;
     bool isDeleting;
-
+    vtkSmartPointer<vtkIdList> pickedCells;
     vtkSmartPointer<vtkCellPicker> cellPicker;
 
     vtkSmartPointer<vtkActor> highlightedCellActor;

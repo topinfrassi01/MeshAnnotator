@@ -16,29 +16,33 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkGeometryFilter.h>
 
-using InteractorStyleCellPickerBase = vtkInteractorStyleTrackballCameraWithPicker<vtkIdList>;
-
 InteractorStyleCellPicker::InteractorStyleCellPicker()
         : isInSelectionMode(false), isAdding(false), isDeleting(false)
-    {
-        this->cellPicker = vtkSmartPointer<vtkCellPicker>::New();
-        this->cellPicker->SetPickFromList(true);
-        this->cellPicker->SetTolerance(0.001);
+{
+    this->pickedCells = vtkSmartPointer<vtkIdList>::New(); 
+    this->cellPicker = vtkSmartPointer<vtkCellPicker>::New();
+    this->cellPicker->SetPickFromList(true);
+    this->cellPicker->SetTolerance(0.001);
 
-        this->highlightedCellIdList = vtkSmartPointer<vtkIdList>::New();
-        this->highlightedCellIdList->SetNumberOfIds(1);
+    this->highlightedCellIdList = vtkSmartPointer<vtkIdList>::New();
+    this->highlightedCellIdList->SetNumberOfIds(1);
 
-        this->highlightedCellMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        this->highlightedCellActor = vtkSmartPointer<vtkActor>::New();
-    }
+    this->highlightedCellMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    this->highlightedCellActor = vtkSmartPointer<vtkActor>::New();
+}
+
+const void InteractorStyleCellPicker::updateAnnotatedMesh(AnnotatedMesh& mesh)
+{
+
+}
 
 void InteractorStyleCellPicker::SetObservedActor(vtkSmartPointer<vtkActor> actor) {
-    InteractorStyleCellPickerBase::SetObservedActor(actor);
+    vtkInteractorStyleTrackballCameraWithPicker::SetObservedActor(actor);
     this->cellPicker->AddPickList(this->observedActor);
 
     this->extractSelectedCells = vtkSmartPointer<vtkExtractCells>::New();
     this->extractSelectedCells->SetInputData(this->observedActor->GetMapper()->GetInput());
-    this->extractSelectedCells->SetCellList(this->pickedObject);
+    this->extractSelectedCells->SetCellList(this->pickedCells);
     this->extractSelectedCells->Update();
     this->geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();
     this->geometryFilter->SetInputConnection(this->extractSelectedCells->GetOutputPort());
@@ -50,7 +54,7 @@ void InteractorStyleCellPicker::SetObservedActor(vtkSmartPointer<vtkActor> actor
 
 void InteractorStyleCellPicker::OnKeyPress()
 {
-    InteractorStyleCellPickerBase::OnKeyPress();
+    vtkInteractorStyleTrackballCameraWithPicker::OnKeyPress();
     // Avoid changing isInSelectionMode if state is already frozen as OnKeyPress launches multiples times if held down
     if (this->isInSelectionMode)
         return;
@@ -66,7 +70,7 @@ void InteractorStyleCellPicker::OnKeyRelease()
     if (key == "Alt_L")
         this->isInSelectionMode = false;
         
-    InteractorStyleCellPickerBase::OnKeyRelease();
+    vtkInteractorStyleTrackballCameraWithPicker::OnKeyRelease();
 }
 
 void InteractorStyleCellPicker::OnLeftButtonDown()
@@ -74,7 +78,7 @@ void InteractorStyleCellPicker::OnLeftButtonDown()
     if (isInSelectionMode)
         this->isAdding = true;
 
-    InteractorStyleCellPickerBase::OnLeftButtonDown();
+    vtkInteractorStyleTrackballCameraWithPicker::OnLeftButtonDown();
 }
 
 void InteractorStyleCellPicker::OnLeftButtonUp()
@@ -87,7 +91,7 @@ void InteractorStyleCellPicker::OnLeftButtonUp()
 
     this->isAdding = false;
 
-    InteractorStyleCellPickerBase::OnLeftButtonUp();
+    vtkInteractorStyleTrackballCameraWithPicker::OnLeftButtonUp();
 }
 
 void InteractorStyleCellPicker::OnRightButtonDown()
@@ -112,13 +116,13 @@ void InteractorStyleCellPicker::OnRightButtonUp()
 void InteractorStyleCellPicker::Rotate()
 {
     if (!this->isInSelectionMode)
-        InteractorStyleCellPickerBase::Rotate();
+        vtkInteractorStyleTrackballCameraWithPicker::Rotate();
 }
 
 void InteractorStyleCellPicker::Dolly()
 {
     if (!this->isInSelectionMode)
-        InteractorStyleCellPickerBase::Dolly();
+        vtkInteractorStyleTrackballCameraWithPicker::Dolly();
 }
 
 void InteractorStyleCellPicker::OnMouseMove()
@@ -134,7 +138,7 @@ void InteractorStyleCellPicker::OnMouseMove()
     {
         this->GetCurrentRenderer()->RemoveActor(this->highlightedCellActor);
         this->GetCurrentRenderer()->GetRenderWindow()->Render();
-        InteractorStyleCellPickerBase::OnMouseMove();
+        vtkInteractorStyleTrackballCameraWithPicker::OnMouseMove();
         return;
     }
 
@@ -145,12 +149,12 @@ void InteractorStyleCellPicker::OnMouseMove()
 
     HighlightHoveredCell(cellId);
 
-    InteractorStyleCellPickerBase::OnMouseMove();
+    vtkInteractorStyleTrackballCameraWithPicker::OnMouseMove();
 }
 
 void InteractorStyleCellPicker::InsertPickedCellId(const vtkIdType& cellId)
 {
-    if (cellId == -1 || this->pickedObject->IsId(cellId) >= 0)
+    if (cellId == -1 || this->pickedCells->IsId(cellId) >= 0)
         return;
 
     if (!this->selectedCellsActor)
@@ -161,20 +165,20 @@ void InteractorStyleCellPicker::InsertPickedCellId(const vtkIdType& cellId)
         this->GetCurrentRenderer()->AddActor(this->selectedCellsActor);
     }
 
-    this->pickedObject->InsertNextId(cellId);
-    this->pickedObject->Modified();
-    this->extractSelectedCells->SetCellList(this->pickedObject.Get());
+    this->pickedCells->InsertNextId(cellId);
+    this->pickedCells->Modified();
+    this->extractSelectedCells->SetCellList(this->pickedCells.Get());
     this->extractSelectedCells->Modified();
 }
 
 void InteractorStyleCellPicker::RemovePickedCellId(const vtkIdType& cellId)
 {
-    if (cellId == -1 || this->pickedObject->IsId(cellId) == -1)
+    if (cellId == -1 || this->pickedCells->IsId(cellId) == -1)
         return;
 
-    this->pickedObject->DeleteId(cellId);
-    this->pickedObject->Modified();
-    this->extractSelectedCells->SetCellList(this->pickedObject.Get());
+    this->pickedCells->DeleteId(cellId);
+    this->pickedCells->Modified();
+    this->extractSelectedCells->SetCellList(this->pickedCells.Get());
     this->extractSelectedCells->Modified();
 }
 

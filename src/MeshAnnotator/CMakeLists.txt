@@ -36,7 +36,7 @@ if(NOT(TARGET VTK::GUISupportQt))
 endif()
 
 # Main executable
-add_executable(MeshAnnotator ControlPanel.cpp VtkViewport.cpp mainwindow.cpp main.cpp)
+add_executable(MeshAnnotator PointPickerConfigurationTool.h NewPickerComboBox.h ControlPanel.cpp VtkViewport.cpp mainwindow.cpp main.cpp)
 target_link_libraries(MeshAnnotator PRIVATE VTKLayer VTK::GUISupportQt VTK::RenderingQt VTK::IOPLY)
 
 if (Qt${VTK_QT_VERSION}Widgets_VERSION VERSION_LESS "5.11.0")
